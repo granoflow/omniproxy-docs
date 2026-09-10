@@ -263,7 +263,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .sidebar a{display:block;color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;font-size:14px}
 .sidebar a:hover{background:var(--accent-weak)}
 .sidebar a.active{background:var(--accent);color:#fff}
-.content{flex:1;max-width:860px;margin:0 auto;padding:40px 48px 80px}
+.content{flex:1;min-width:0;width:100%;overflow-wrap:anywhere;max-width:860px;margin:0 auto;padding:40px 48px 80px}
 .content h1{font-size:30px;margin:0 0 18px;letter-spacing:-.01em}
 .content h2{font-size:22px;margin:34px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .content h3{font-size:18px;margin:26px 0 10px}
@@ -276,7 +276,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .content pre code{background:none;padding:0}
 .content blockquote{margin:14px 0;padding:10px 16px;border-left:4px solid var(--accent);
   background:var(--accent-weak);border-radius:0 8px 8px 0;color:var(--fg)}
-.content table.md-table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+.content table.md-table{display:block;overflow-x:auto;border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
 .content table.md-table th,.content table.md-table td{border:1px solid var(--line);padding:8px 12px;text-align:left}
 .content table.md-table th{background:var(--sidebar)}
 .content hr{border:none;border-top:1px solid var(--line);margin:28px 0}
@@ -286,6 +286,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .pager{display:flex;justify-content:space-between;margin-top:48px;border-top:1px solid var(--line);padding-top:20px;gap:12px}
 .pager a{color:var(--accent);text-decoration:none;font-size:14px;max-width:48%}
 .pager .next{text-align:right;margin-left:auto}
+@media (max-width:760px){
+  .layout{flex-direction:column}
+  .sidebar{position:static;width:100%;flex:none;height:auto;max-height:35vh;border-right:0;border-bottom:1px solid var(--line)}
+  .content{padding:24px 20px 48px}
+}
 .pager .label{display:block;color:var(--muted);font-size:12px}
 .badge{display:inline-block;font-size:12px;color:var(--muted);border:1px solid var(--line);
   border-radius:999px;padding:2px 10px;margin-bottom:14px}
