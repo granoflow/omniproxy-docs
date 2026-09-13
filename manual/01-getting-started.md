@@ -4,6 +4,72 @@
 
 本章介绍 macOS 桌面版和 CLI 的首次设置。准备好与你的设备匹配的安装包；如果要连接外部服务，还需要该服务的地址和凭据。不要把密钥放进截图、聊天记录或共享文件。
 
+## 在任意目录运行 CLI
+
+桌面用户可以直接打开 OmniProxy.app。以下快捷方式步骤用于**独立 CLI**；不需要 App 获得写入终端配置的权限，也不需要管理员权限。
+
+### 先找到原程序
+
+将解压后的 CLI 安装目录放到准备长期保留的位置，保留随包资源。打开终端，输入程序的完整路径并加上 `--version`；macOS 可以把 Finder 中的 `omniproxy` 文件拖进终端来填写路径。路径有空格时用引号包起来，例如：
+
+```sh
+"/你选择的安装目录/omniproxy" --version
+```
+
+看到版本信息后再创建快捷方式。下面的路径是占位示例，必须换成刚才验证成功的真实路径。若安装工具已经配置好了命令，先运行 `command -v omniproxy` 和 `omniproxy --version` 核对，无需重复创建。
+
+### macOS / Linux：建立符号链接
+
+在你自己的终端执行：
+
+```sh
+mkdir -p "$HOME/.local/bin"
+ln -s "/你选择的安装目录/omniproxy" "$HOME/.local/bin/omniproxy"
+```
+
+符号链接像指向原程序的快捷方式，不会复制程序。若提示 `File exists`，先用 `ls -l "$HOME/.local/bin/omniproxy"` 检查已有入口；不要强制覆盖不认识的文件。确认是要替换的旧符号链接后，再按下方步骤移除并重新创建。
+
+让终端能搜索到快捷方式目录。在 macOS 默认 zsh 的 `~/.zshrc` 中加入下面一行（已有相同配置时不重复添加）：
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+重新打开终端。Linux 使用 Bash 时，交互式终端可在 `~/.bashrc` 配置同一行；其他 shell 使用其对应配置文件。这里只影响读取这些配置的 shell，桌面 Agent 不一定读取 shell 配置，可直接设置 CLI 的绝对路径。
+
+换到任意目录验证：
+
+```sh
+cd /tmp
+command -v omniproxy
+ls -l "$HOME/.local/bin/omniproxy"
+omniproxy --version
+```
+
+第一条查询应显示你选定的入口。若显示另一处路径，用 `type -a omniproxy` 检查同名命令或 alias，再调整自己的配置。原程序移动或删除后，链接会失效，需要重新指定目标。
+
+### Windows：把安装目录加入用户 PATH
+
+先在 PowerShell 用 `& 'C:\你选择的安装目录\omniproxy.exe' --version` 验证原程序，再在系统「环境变量」中编辑**用户变量** `Path`，添加包含该文件的目录。重新打开 PowerShell，运行 `Get-Command omniproxy -All` 和 `omniproxy --version` 核对。无需为了创建符号链接开启管理员权限。
+
+### 移除快捷方式
+
+macOS / Linux 先检查 `ls -l "$HOME/.local/bin/omniproxy"`，确认它是自己创建、准备移除的符号链接，再执行：
+
+```sh
+if [ -L "$HOME/.local/bin/omniproxy" ]; then
+  rm "$HOME/.local/bin/omniproxy"
+fi
+```
+
+这只移除链接，不删除原程序或用户数据。`~/.local/bin` 可能还有其他命令，不必删除目录或 PATH 配置。Windows 在用户 `Path` 中移除自己添加的安装目录即可。
+
+### 只有沙盒 App 时
+
+不要把 `OmniProxy.app/Contents/Helpers/` 中的 Runtime helper 链接为终端命令；快捷方式不能解除沙盒或签名启动限制。若当前 App 安装包没有提供经过验证的终端启动入口，可以继续使用桌面界面；需要上述终端流程时使用独立 CLI。App 与独立 CLI 的设置和数据分开保存。
+
+`path show`、`path install`、`path uninstall` 已从新版 CLI 移除。以前创建的链接不会自动删除；可按本节核对和手动移除。
+
 ## 设置前先分清两类内容
 
 模型文件与应用自身的设置分开管理。首次引导使用默认存储位置，不要求你先选择一个总目录。以后管理模型文件时，不要把移动模型文件误当作转移了来源配置和凭据。

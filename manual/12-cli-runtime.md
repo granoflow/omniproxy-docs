@@ -2,7 +2,7 @@
 
 CLI 用于明确执行命令和读取结构化结果，桌面版提供另一种操作界面。两种发行配置并非每个入口都可用：先检查当前二进制的帮助和能力说明，再判断命令是否适合这个运行环境。
 
-例如，同名的 `omniproxy` 可能来自独立安装，也可能来自 App 随附 helper。遇到“不可用”或运行时连接失败，先核对实际二进制和连接对象，不要先删除数据或反复初始化。
+例如，同名的 `omniproxy` 可能来自独立安装，也可能来自 App 提供的正式终端入口。遇到“不可用”或运行时连接失败，先核对实际二进制和连接对象，不要先删除数据或反复初始化。
 
 ## 三种入口
 
@@ -22,7 +22,6 @@ CLI 用于明确执行命令和读取结构化结果，桌面版提供另一种�
 | `omniproxy service start\|stop\|status\|enable\|disable` | 管理当前用户级 CLI 网关服务 |
 | `omniproxy status` | 查看运行状态、锁、端口、健康度和活动任务 |
 | `omniproxy doctor` | 自检配置、权限、端口、模型、检索和 schema |
-| `omniproxy path show\|install\|uninstall` | 用户级 PATH 链（见下节） |
 | `omniproxy version` / `omniproxy -V` | 查看产品名、版本、构建与协议版本 |
 | `omniproxy gateway ...` | 管理端口、代理密钥、监听范围和当前复制地址 |
 | `omniproxy models ...` | 浏览、下载、删除、测试和选择本地模型 |
@@ -35,7 +34,7 @@ CLI 用于明确执行命令和读取结构化结果，桌面版提供另一种�
 | `omniproxy stats ...` | 查询今日、日、周、月统计 |
 | `omniproxy config ...` | 管理非密钥设置 |
 | `omniproxy jobs ...` | 查询、观察、取消和重试长任务 |
-| `omniproxy help export` / `--help` / `--help-ai` | 五语静态帮助、完整命令导出和可选 AI 增强解释 |
+| `omniproxy <command> --help` / `--help-ai` | 五语静态帮助和可选 AI 增强解释 |
 
 命令存在并不证明当前环境满足其运行条件。按帮助中的发行配置、初始化状态和运行时要求判断。
 
@@ -71,30 +70,9 @@ Version: 0.1.0
 
 Store 与 Homebrew 安装时都携带 `omniproxy-mlx-backend`、`mlx.metallib` 与 `omniproxy-llama-server`。运行时不下载可执行代码。包装缺少 helper 时返回 `runtime_backend_not_installed`，应重装产品，而不是执行已删除的 backend 安装命令。
 
-## 用户级 PATH 链（`path show|install|uninstall`）
+## 终端快捷方式与路径诊断
 
-App 与免费 CLI **都**提供同一组命令，写到各平台同一用户级路径，不改 `~/.zshrc`，也不抢 `/opt/homebrew/bin`：
-
-| 平台 | 链路径 |
-|---|---|
-| macOS / Linux | `~/.local/bin/omniproxy` |
-| Windows | `%LOCALAPPDATA%\OmniProxy\bin\omniproxy.exe` |
-
-`path install` 把该链指到**本进程**二进制（standalone = 当前 exe；App = bundle helper）。后一次覆盖前一次。`uninstall` 只拆「确实指向本二进制」的链；指向 brew 或其它副本时返回 `path_link_foreign`，不删。Store 沙盒写失败时返回 `permission_denied` 和**一条**可复制的 `ln`，不上特权 Helper。
-
-`path show --json` 字段：
-
-| 字段 | 含义 |
-|---|---|
-| `link_path` | 用户级链路径 |
-| `target_path` | 链当前目标；未装则为空 |
-| `distribution` | 能判定时的目标发行物 |
-| `replaced` | `install` 是否覆盖了另一目标 |
-| `path_dir_on_path` | 用户级目录是否在当前 `PATH` |
-| `resolved_binary` | 当前环境 `command -v omniproxy` 实际命中的绝对路径 |
-| `path_shadowed` | `resolved_binary` 与 `link_path` 不是同一文件（常见于 brew 抢先） |
-
-`path_shadowed=true` 时，终端或 Agent 可能仍先命中 brew。**Agent 应 exec `link_path` 的绝对路径**（或 `path show` 给出的 `target_path`），不要假设 `omniproxy` 就是刚安装的那一份。产品不把用户级目录自动插入 `PATH` 的最前面。
+首次定位原程序、创建快捷方式、配置 PATH、验证和移除，见 [01 · 安装与引导](01-getting-started.md#在任意目录运行-cli)。产品不自动管理链接或修改 shell 配置。遇到同名程序时，macOS / Linux 使用 `command -v omniproxy`、`type -a omniproxy`，Windows PowerShell 使用 `Get-Command omniproxy -All` 核对实际入口。
 
 `init` / `doctor --json` 另外给出建议字段（不是强制）：`dual_install`、PATH 链的 `link_path` / `target_path` / `distribution` / `resolved_binary` / `path_shadowed`、是否有对方网关（`peer_gateway` + edition/pid）、以及若有冲突时的 `conflict_kind`。人类输出只在发现多个安装、终端路径异常或已有实例占用时给出建议：检测到多个 OmniProxy 时建议只保留一个；如果同时使用 App 和 CLI，两边的设置和数据分开保存。`resident_helper_unreachable` 不复用「对方占用网关」句子。
 
@@ -109,9 +87,9 @@ App 与免费 CLI **都**提供同一组命令，写到各平台同一用户级�
 完整命令树提供英语、简体中文、繁体中文静态 help 和全局 dry-run。可以一次导出全部帮助：
 
 ```bash
-omniproxy help export --lang zh-CN --format markdown > omniproxy-help-zh-cn.md
-omniproxy help export --lang zh-TW --format markdown > omniproxy-help-zh-tw.md
-omniproxy help export --lang en --format json > omniproxy-help-en.json
+omniproxy models --help --lang zh-CN
+omniproxy models --help --lang zh-TW
+omniproxy models --help --lang en
 ```
 
 也可以逐条预演：
@@ -344,7 +322,7 @@ JobService 同时返回两种作用范围：模型资产等 Shared 工作是 `sc
 ```bash
 omniproxy --help --lang zh-CN
 omniproxy models pull --help --lang zh-TW
-omniproxy help export --lang zh-CN --format markdown
+omniproxy models --help --lang zh-CN
 ```
 
 第二层是可选 AI 增强：
@@ -357,7 +335,7 @@ omniproxy models pull --help-ai "下载中断后如何恢复？" --lang zh-CN
 
 ## 结构化输出和退出码
 
-所有业务 JSON 输出都有稳定的 `schema_version`、`operation`、`ok`、`data`、`warnings` 和 `error`。dry-run 使用业务计划并保留无法无副作用确认的条件；`help export --format json` 是导出文件格式，保持裸帮助数组，每页的 `operations[]` 包含参数、默认值、命令形态示例、封装可用性与 dry-run 摘要。持续进度使用 JSON Lines，每行一个完整事件。
+所有业务 JSON 输出都有稳定的 `schema_version`、`operation`、`ok`、`data`、`warnings` 和 `error`。dry-run 使用业务计划并保留无法无副作用确认的条件；静态 `--help` 保持终端文本格式，不属于业务结果 envelope。持续进度使用 JSON Lines，每行一个完整事件。
 
 | 退出码 | 含义 |
 |---:|---|

@@ -68,4 +68,4 @@ omniproxy tools guide aider
 - 不管理 ComfyUI 工作流或 Agent 会话。
 - 不把这些工具的功能搬进 OmniProxy。
 
-下一章：[16 · 附录](16-appendix.md)
+下一章：[18 · Agent 能力发现](18-agent-capability-discovery.md)

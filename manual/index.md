@@ -27,6 +27,7 @@ OmniProxy 是个人 AI 网关：你在这里管理本地模型、连接外部模
 | 理解协议和能力边界 | [15 · 核心概念](15-concepts.md) |
 | 查术语或常见问题 | [16 · 附录](16-appendix.md) |
 | 配合第三方 AI 工具使用 | [17 · 工具](17-tools.md) |
+| 让 Agent 查看当前网关能力 | [18 · Agent 能力发现](18-agent-capability-discovery.md) |
 
 ## 分清客户端、网关和模型来源
 

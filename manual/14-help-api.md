@@ -8,7 +8,7 @@
 
 ```bash
 omniproxy --help
-omniproxy help export --format json
+omniproxy models --help
 ```
 
 第一条查看命令帮助；第二条导出裸 JSON 帮助数组，便于脚本处理。它与其他命令使用的统一 JSON envelope 不同。
@@ -61,7 +61,7 @@ omniproxy help export --format json
 
 ## 文档和运行时边界
 
-完整手册发布在 [OmniProxy 文档站](https://granoflow.github.io/omniproxy-docs/)。支持在线手册的版本在根 `--help` 显示链接，App 设置中的产品手册入口使用浏览器打开同一站点；这些版本不再提供 `docs path` 或 `docs serve`。旧版本若仍显示 docs 命令，请以其本地帮助为准。
+完整手册发布在 [OmniProxy 文档站](https://granoflow.github.io/omniproxy-docs/)。支持在线手册的版本在根 `--help` 显示链接，App 设置中的产品手册入口使用浏览器打开同一站点；这些版本不再提供 `docs path`、`docs serve` 或公开 `help` 导出命令。旧版本若仍显示这些命令，请以其本地帮助为准。
 
 完整手册需要网络，本地 `--help` 无需网络或模型。动态 API 示例、AI 文档检索与初始化自动索引尚未交付。MCP 已退役，Agent 应直接使用 CLI。
 
