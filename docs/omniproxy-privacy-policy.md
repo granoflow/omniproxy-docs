@@ -8,7 +8,7 @@ OmniProxy is a Personal AI Gateway for managing local models, connecting externa
 
 - Settings, credentials, local model assets, and call records are maintained on your device. Installing OmniProxy does not give us access to them.
 - Local inference processes content on the machine running OmniProxy. External models, search services, and webpage-reading services receive the information needed for the requests you route to them.
-- Recipe contributions are optional. Testing, editing, saving, or previewing a recipe does not upload it to our contribution service. Each submission requires an explicit sharing action and confirmation.
+- Recipe contributions are optional. Testing, editing, saving, or previewing a recipe does not upload it to our contribution service. A submission is sent only when you choose the sharing action; routine use does not submit it.
 - A recipe contribution contains a restricted description of protocol mappings and test-result metadata, not your complete prompts, responses, API credentials, or media attachments.
 - We do not sell or rent your personal information, use it for advertising, or use contribution data to train AI models. Contributions are used to review and improve model compatibility rules.
 
@@ -54,9 +54,25 @@ Redaction is not a guarantee of anonymity or permission to disclose someone else
 
 A "recipe" describes how OmniProxy adapts request and response fields for a model or protocol. Sharing a recipe helps maintainers investigate compatibility problems; it is not a request to upload your conversation history.
 
+### Firebase functions and when they run
+
+Firebase is used for the recipe-contribution service only. It is not the destination for your ordinary model calls, local call logs, statistics, model assets, settings, or backups. OmniProxy does not use Firebase Analytics, Crashlytics, Remote Config, Firebase Authentication, or a Firebase user-account system.
+
+| Function | Trigger and information handled |
+| --- | --- |
+| Prepare a preview or display submission records | Runs locally through OmniProxy's own runtime. It reads the local contribution projection, local receipts, and the service configuration. It does not query Firebase or send a contribution. |
+| Submit a contribution | Runs after you choose to share. It sends the restricted recipe document, a random submission identifier, and its deletion credential over HTTPS to the contribution service. |
+| Delete a submission | Runs when you request deletion. It sends the submission identifier and deletion credential to the service so it can authenticate and remove the record. It does not upload a new recipe or grant permission for future sharing. |
+| Prevent abuse | Runs on requests received by the service, including submission and deletion requests. It uses short-lived IP-derived rate-limit buckets and counts, as described below. |
+| Expire records or reject a candidate | Runs on the server: scheduled cleanup removes expired records, and authorized maintainers can reject and remove candidates. These actions do not collect a new recipe from your device or require a new sharing decision. |
+
+Downloading official recipes uses the separate signed distribution mechanism; it is not an upload to Firebase. Testing, editing, saving, restarting OmniProxy, or opening this policy does not submit a contribution.
+
 ### Your sharing decision
 
-When sharing is available, OmniProxy prepares a local preview of the eligible contribution. You must actively submit and confirm that contribution. General acceptance of this policy is not permission for automatic uploads. Ordinary testing, editing, saving, and previewing remain independent of sharing. A later submission or manual retry requires another explicit action; OmniProxy does not automatically retry a contribution upload.
+When sharing is available, the application shows a preview of the eligible contribution and a brief explanation of its purpose. Selecting **Agree and share** is both your authorization and the instruction to submit that contribution. The software does not require a second permission dialog after that action. The corresponding CLI submission requires its explicit confirmation option.
+
+General acceptance of this policy is not permission for automatic collection. Declining or closing the preview does not submit it and does not prevent local editing, testing, or saving. Each later contribution or manual retry is a new action you initiate; the current software does not automatically upload subsequent changes or automatically retry a failed submission. Deletion and server cleanup are separate operations, not new contribution uploads.
 
 ### What is submitted
 
@@ -87,7 +103,7 @@ The contribution handler does not write submission bodies, deletion credentials,
 
 Each submission receipt is set to expire 90 days after acceptance. Scheduled cleanup runs hourly to remove expired receipts and candidates; the expiry time is not a guarantee that physical deletion completes at that exact instant. A candidate submitted independently by several people may remain while other valid submissions reference it, with its retention renewed by a new submission.
 
-You can request deletion through the shared-recipes controls or the corresponding CLI contribution-deletion operation in versions that support sharing. A successful response confirms removal of your backend receipt. The associated candidate is removed when no other live submission references it. A pending or failed deletion is not confirmation that the server record is gone. An upload with an unknown outcome may still have reached the server; keep its receipt and deletion credential so you can request deletion.
+When sharing is available, the sharing preview provides **Shared recipes**, where you can request deletion; the corresponding CLI contribution-deletion operation is also available. There is no separate contribution-management section in Settings. If the preview is unavailable, contact **hello@anz.tv** privately to request deletion or withdraw your sharing consent. Provide the submission identifier if you have it, but do not send your deletion credential or provider API key by email. A successful response confirms removal of your backend receipt. The associated candidate is removed when no other live submission references it. A pending or failed deletion is not confirmation that the server record is gone. An upload with an unknown outcome may still have reached the server; keep its receipt and deletion credential so you can request deletion.
 
 Deleting a local recipe, uninstalling OmniProxy, or losing the deletion credential does not itself delete a remote contribution. If you cannot use the deletion operation, contact us privately. We may need sufficient information to locate the record and verify the request. Never post the deletion credential in a public issue. Infrastructure logs have a separate retention lifecycle; deleting a contribution does not necessarily erase those logs.
 
