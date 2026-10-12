@@ -2,6 +2,8 @@
 
 在线阅读：https://granoflow.github.io/omniproxy-docs/
 
+隐私政策：[OmniProxy Privacy Policy（English）](docs/omniproxy-privacy-policy.md)。该政策是独立法律文档，不随手册章节翻译。
+
 `manual/` 是用户手册唯一编辑源。修改 Markdown 和图片，提交到 main 后由 GitHub Actions 构建、检查并发布到 GitHub Pages；HTML 是生成物，不手工编辑或提交。
 
 ## 本地预览
