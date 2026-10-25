@@ -38,3 +38,34 @@ class SiteTests(unittest.TestCase):
 
     def test_escaped_table_separator_keeps_command_in_one_cell(self):
         self.assertEqual(build_site._split_row(r'| `a\|b` | label |'), ['`a|b`', 'label'])
+
+    def test_home_directory_controls_sidebar_and_pager_order(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'manual'
+            root.mkdir()
+            (root / 'index.md').write_text(
+                '# Home\n\n[Outside](https://example.com/a.md)\n'
+                '## Getting started\n[Start](z.md#start)\n'
+                '## Configuration & tools\n[Again](z.md)\n[Next](a.md)\n')
+            (root / 'z.md').write_text('# Start\n\n## Start\n')
+            (root / 'a.md').write_text('# Next\n')
+            (root / 'appendix.md').write_text('# Appendix\n')
+            out = Path(tmp) / 'out'
+
+            build_site.build(str(root), str(out))
+
+            page = (out / 'z.html').read_text()
+            sidebar = page.split('<nav class="sidebar">', 1)[1].split('</nav>', 1)[0]
+            sections = sidebar.split('<section>')[1:]
+            self.assertEqual(len(sections), 2)
+            self.assertIn('<h3>Getting started</h3>', sections[0])
+            self.assertIn('href="z.html" aria-current="page"', sections[0])
+            self.assertNotIn('href="a.html"', sections[0])
+            self.assertIn('<h3>Configuration &amp; tools</h3>', sections[1])
+            self.assertIn('href="a.html"', sections[1])
+            self.assertNotIn('href="z.html"', sections[1])
+            pager = page.split('<div class="pager">', 1)[1].split('</div>', 1)[0]
+            self.assertIn('href="index.html"', pager)
+            self.assertIn('href="a.html"', pager)
+            self.assertIn('href="appendix.html"', sidebar)
+            self.assertEqual(check_site.check(out), [])

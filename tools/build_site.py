@@ -64,7 +64,9 @@ def _link_repl(m):
 
 def _img_repl(m):
     alt, url = m.group(1), m.group(2)
-    return f'<img alt="{alt}" src="{url}">'
+    alt = html.escape(html.unescape(alt), quote=True)
+    url = html.escape(html.unescape(url), quote=True)
+    return f'<a href="{url}"><img alt="{alt}" src="{url}" loading="lazy"></a>'
 
 
 def _is_block_start(line: str) -> bool:
@@ -260,6 +262,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 .sidebar{width:280px;flex:0 0 280px;background:var(--sidebar);border-right:1px solid var(--line);
   padding:22px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
 .sidebar h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+.sidebar h3{font-size:13px;color:var(--muted);margin:20px 10px 6px}
 .sidebar a{display:block;color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;font-size:14px}
 .sidebar a:hover{background:var(--accent-weak)}
 .sidebar a.active{background:var(--accent);color:#fff}
@@ -297,11 +300,24 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe 
 """
 
 
-def _page_html(title, body, nav, current_idx, prev_item, next_item, site_title=DEFAULT_TITLE):
-    nav_html = '\n'.join(
-        f'<a class="{"active" if idx == current_idx else ""}" href="{href}">{label}</a>'
-        for idx, (label, href) in enumerate(nav)
-    )
+def _page_html(title, body, nav, current_idx, prev_item, next_item,
+               site_title=DEFAULT_TITLE, chapter_groups=()):
+    nav_parts = []
+    current_group = ''
+    for idx, (label, href) in enumerate(nav):
+        group = chapter_groups[idx] if chapter_groups else ''
+        if group != current_group:
+            if current_group:
+                nav_parts.append('</section>')
+            if group:
+                nav_parts.append(f'<section><h3>{html.escape(group)}</h3>')
+            current_group = group
+        active = 'active' if idx == current_idx else ''
+        current = ' aria-current="page"' if idx == current_idx else ''
+        nav_parts.append(f'<a class="{active}" href="{href}"{current}>{label}</a>')
+    if current_group:
+        nav_parts.append('</section>')
+    nav_html = '\n'.join(nav_parts)
     prev = ''
     if prev_item:
         prev = f'<a href="{prev_item[1]}"><span class="label">上一页</span>{prev_item[0]}</a>'
@@ -333,8 +349,28 @@ def _page_html(title, body, nav, current_idx, prev_item, next_item, site_title=D
 </html>"""
 
 
-def collect_pages(root, exclude_dirs=frozenset()):
-    """返回按路径排序的 (title, relpath_noext, body) 列表。exclude_dirs：跳过这些子目录。"""
+def _chapter_navigation(root):
+    """首页二级标题拥有章节分组，章节首次链接拥有归属和顺序。"""
+    chapters = {"index.md": ''}
+    index_path = os.path.join(root, "index.md")
+    if not os.path.isfile(index_path):
+        return chapters
+    group = ''
+    with open(index_path, encoding='utf-8') as f:
+        for line in f:
+            heading = re.match(r'^##\s+(.+?)\s*$', line)
+            if heading:
+                group = heading.group(1)
+            for target in re.findall(r'(?<!!)\[[^\]]+\]\(([^)]+)\)', line):
+                url = urlsplit(target)
+                path = posixpath.normpath(url.path)
+                if not url.scheme and not url.netloc and path.endswith('.md'):
+                    chapters.setdefault(path, group)
+    return chapters
+
+
+def collect_pages(root, exclude_dirs=frozenset(), chapter_groups=None):
+    """按首页章节链接顺序返回页面，未列出的页面按路径排在最后。"""
     files = []
     for dirpath, dirnames, fnames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
@@ -343,7 +379,9 @@ def collect_pages(root, exclude_dirs=frozenset()):
                 full = os.path.join(dirpath, fn)
                 rel = os.path.relpath(full, root)
                 files.append(rel)
-    files.sort(key=lambda path: (path != "index.md", path))
+    chapter_groups = chapter_groups if chapter_groups is not None else _chapter_navigation(root)
+    chapter_order = {path: idx for idx, path in enumerate(chapter_groups)}
+    files.sort(key=lambda path: (chapter_order.get(path, len(chapter_order)), path))
     pages = []
     for rel in files:
         with open(os.path.join(root, rel), encoding='utf-8') as f:
@@ -358,10 +396,12 @@ def build(root, out_dir, exclude_dirs=frozenset(), site_title=DEFAULT_TITLE):
     out_dir = os.path.realpath(out_dir)
     if os.path.commonpath([root, out_dir]) == root:
         raise ValueError('output must be outside the manual source directory')
-    pages = collect_pages(root, exclude_dirs)
+    chapter_groups = _chapter_navigation(root)
+    pages = collect_pages(root, exclude_dirs, chapter_groups)
     if not any(name == 'index' for _, name, _ in pages):
         raise ValueError('manual index.md is required')
     nav = [(title, noext + '.html') for (title, noext, _) in pages]
+    groups = [chapter_groups.get(noext + '.md', '') for _, noext, _ in pages]
     os.makedirs(out_dir, exist_ok=True)
     for idx, (title, noext, body) in enumerate(pages):
         prev_item = nav[idx - 1] if idx > 0 else None
@@ -370,7 +410,7 @@ def build(root, out_dir, exclude_dirs=frozenset(), site_title=DEFAULT_TITLE):
         local_nav = [(label, posixpath.relpath(href, page_dir)) for label, href in nav]
         prev_item = local_nav[idx - 1] if idx > 0 else None
         next_item = local_nav[idx + 1] if idx < len(local_nav) - 1 else None
-        html_doc = _page_html(title, body, local_nav, idx, prev_item, next_item, site_title)
+        html_doc = _page_html(title, body, local_nav, idx, prev_item, next_item, site_title, groups)
         destination = os.path.join(out_dir, noext + '.html')
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         with open(destination, 'w', encoding='utf-8') as f:
